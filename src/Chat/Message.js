@@ -8,32 +8,63 @@ class ChatMessage extends ChatBaseClass {
       image: [".mdRGT07Image", "img"],
       sticker: [".mdRGT07Sticker", "img"]
     },
-    issuer: {
+    issuerType: {
       admin: ".mdRGT07Clerk",
       customer: ".mdRGT07Other",
       own: ".mdRGT07Own"
     },
     isRead: ".mdRGT07Opt .mdRGT07Read:not(.MdNonDisp)",
     sentAt: ".mdRGT07Date time",
-    adminName: ".mdRGT07Ttl"
+    issuer: ".mdRGT07Ttl"
   };
 
   _data = {
+    localId: null,
     contentType: null,
     content: null,
-    issuer: null,
+    issuerType: null,
     isRead: null,
     sentAt: null,
-    adminName: null
+    issuer: null
   };
 
   constructor(dom) {
     super(dom);
-    
+
     this._createData();
   }
 
+  get localId() {
+    return this._data.localId;
+  }
+
   get contentType() {
+    return this._data.contentType;
+  }
+
+  get content() {
+    return this._data.content;
+  }
+
+  get sentAt() {
+    return this._data.sentAt;
+  }
+
+  get issuerType() {
+    return this._data.issuerType;
+  }
+
+  get issuer() {
+    return this._data.issuer;
+  }
+
+  get isRead() {
+    return this._data.isRead;
+  }
+
+  getLocalId = () => this.dom.dataset.localId;
+
+  getContentType() {
     const { content, contentType } = this.constructor._cssQuery;
     const { classList } = this.dom.querySelector(content);
     const type = Object.keys(contentType).find(key =>
@@ -47,58 +78,102 @@ class ChatMessage extends ChatBaseClass {
       );
     }
 
-    this._update("contentType", type);
-
     return type;
   }
 
-  get content() {
-    const { contentType } = this._data;
+  getContent() {
+    const { contentType } = this;
+    const dom = this._query("contentType." + contentType);
 
-    return this._getAndUpdateData(
-      "content",
-      dom => (contentType === "text" ? dom.innerHTML : dom.src),
-      "contentType." + contentType
-    );
+    return contentType === "text" ? dom.innerHTML : dom.src;
   }
 
-  get sentAt() {
-    return this._getAndUpdateData("sentAt", dom => dom.textContent);
+  getSentAt() {
+    const date = new Date(this._getDateTimestamp());
+    const dateString = [
+      date.getFullYear(),
+      date.getMonth() + 1,
+      date.getDate()
+    ].join("/");
+    const timeString = this._query("sentAt").textContent;
+
+    if (!/^\d{1,2}:\d{2} (AM|PM)$/g.test(timeString)) {
+      throw new Error(
+        "Invalid timestring retrieved from " +
+          this.constructor._cssQuery.sentAt +
+          ": " +
+          timeString
+      );
+    }
+
+    const dateTimeString = [dateString, timeString].join(" ");
+    const dateTimestamp = Date.parse(dateTimeString);
+
+    return dateTimestamp;
   }
 
-  get issuer() {
+  getIssuerType() {
     const { classList } = this.dom;
-    const { issuer } = this.constructor._cssQuery;
+    const { issuerType } = this.constructor._cssQuery;
 
-    const data = Object.keys(issuer).find(key =>
-      classList.contains(issuer[key].substring(1))
+    const data = Object.keys(issuerType).find(key =>
+      classList.contains(issuerType[key].substring(1))
     );
-
-    this._update("issuer", data);
 
     return data;
   }
 
-  get isRead() {
-    const callback =
-      this._data.issuer === "customer"
-        ? () => null
-        : dom => (dom ? true : false);
+  getIsRead() {
+    if (this.issuerType === "customer") {
+      return null;
+    }
 
-    return this._getAndUpdateData("isRead", callback);
+    return this._query("isRead") ? true : false;
   }
 
-  get adminName() {
-    return this._getAndUpdateData("adminName", dom => (dom ? dom.textContent : null));
+  getIssuer() {
+    const dom = this._query("issuer");
+    let issuer;
+
+    if (dom) {
+      issuer = dom.textContent;
+    } else if (!dom && this.issuerType === "own") {
+      issuer = "currentAdmin";
+    } else {
+      console.warn(
+        "Could not detect issuer using " +
+          this.constructor._cssQuery.issuer +
+          ". This is technically impossible"
+      );
+
+      issuer = null;
+    }
+
+    return issuer;
   }
 
   _createData() {
-    this.contentType;
-    this.content;
-    this.sentAt;
-    this.issuer;
-    this.isRead;
-    this.adminName;
+    this._update("localId", this.getLocalId());
+    this._update("contentType", this.getContentType());
+    this._update("content", this.getContent());
+    this._update("sentAt", this.getSentAt());
+    this._update("issuerType", this.getIssuerType());
+    this._update("issuer", this.getIssuer());
+    this._update("isRead", this.getIsRead());
+  }
+
+  _getDateTimestamp() {
+    let prevDom = this.dom.previousElementSibling;
+
+    while (true) {
+      let { localId } = prevDom.dataset;
+
+      if (prevDom.classList.contains("mdRGT10Date") && localId) {
+        return parseInt(localId);
+      }
+
+      prevDom = prevDom.previousElementSibling;
+    }
   }
 }
 

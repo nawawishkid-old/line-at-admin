@@ -11,9 +11,30 @@ class ChatList extends ChatBaseClass {
     selectedItem: null
   };
 
-  constructor(cssSelector) {
+  _cache = {
+    doms: []
+  };
+
+  constructor(cssSelector, domsLimit = 100) {
     super(cssSelector);
+    this.domsLimit = domsLimit;
     this._createData();
+  }
+
+  get items() {
+    return this._data.items;
+  }
+
+  get selectedItem() {
+    return this._data.selectedItem;
+  }
+
+  get activeItems() {
+    return this.where("isActive", true);
+  }
+
+  get length() {
+    return this.items.length;
   }
 
   /**
@@ -21,19 +42,22 @@ class ChatList extends ChatBaseClass {
    *
    * @return {array} Array of all ChatItem.
    */
-  get items() {
-    return this._getAndUpdateData("items", doms =>
-      [...doms].map(dom => new ChatItem(dom))
-    );
+  getItems() {
+    const cachedDoms = this._cache.doms;
+    let doms;
+
+    if (cachedDoms.length > 0) {
+      doms = cachedDoms;
+    } else {
+      doms = this._query("items", true);
+
+      this._cache.doms = doms;
+    }
+
+    return [...doms].slice(0, this.domsLimit).map(dom => new ChatItem(dom));
   }
 
-  get selectedItem() {
-    const item = this.where("isSelected", true)[0];
-
-    this._update("selectedItem", item);
-
-    return item;
-  }
+  getSelectedItem = () => this.where("isSelected", true)[0];
 
   /**
    * Find ChatItem using keyword to be matched with given ChatItem._data key
@@ -45,19 +69,34 @@ class ChatList extends ChatBaseClass {
   find = (...args) => this.filter(this._getFindFilter(...args));
 
   /**
-   * Filter ChatItem using its ._data property
+   * Filter collection using the ._data property
    *
-   * @param {string} key Name of ChatItem._data key
-   * @param {*} value A filter function that accepts ChatItem._data[key] as an argument; or any data type to be matched with ChatItem._data[key]
-   *
-   * @return {array} Array of filtered ChatItem
+   * @return {array} Array of filtered collection.
    */
-  where = (key, value) =>
-    this.filter(
-      typeof value === "function"
-        ? item => value(item[key])
-        : item => item[key] === value
-    );
+  where(...args) {
+    // If first argument is not an array
+    // there is only one where clause (filter)
+    if (!Array.isArray(args[0])) {
+      const [key, value] = args;
+
+      return this.filter(this._getWhereFilter(key, value));
+    }
+
+    // Support multiple where filters.
+    // Expecting each argument to be an array with length of 2
+    // which the first index is a key string and the last is
+    // a filter function or a value string to be matched.
+    return args.reduce((items, arg) => {
+      const [key, value] = arg;
+
+      return items.filter(this._getWhereFilter(key, value));
+    }, this.items);
+  }
+
+  _getWhereFilter = (key, value) =>
+    typeof value === "function"
+      ? item => value(item[key])
+      : item => item[key] === value;
 
   /**
    * Filter all ChatItem
@@ -78,7 +117,7 @@ class ChatList extends ChatBaseClass {
    * @return {number} Number of items to be clicked.
    */
   filterAndClick(filter, callback, wait = 500) {
-    const items = this.refresh().filter(filter);
+    const items = this.filter(filter);
 
     items.reduce((time, item) => {
       setTimeout(() => {
@@ -95,8 +134,10 @@ class ChatList extends ChatBaseClass {
   }
 
   _createData() {
-    this.items;
-    this.selectedItem;
+    // Clear cache
+    this._cache.doms = [];
+    this._update("items", this.getItems());
+    this._update("selectedItem", this.getSelectedItem());
   }
 
   /**

@@ -25,58 +25,64 @@ class ChatListItem extends ChatBaseClass {
   }
 
   get id() {
-    const { chatid } = this.dom.dataset;
-
-    this._update("id", chatid);
-
-    return chatid;
+    return this._data.id;
   }
 
   get title() {
-    return this._getAndUpdateData("title", dom => dom.textContent);
+    return this._data.title;
   }
-
   get imageSrc() {
-    return this._getAndUpdateData("imageSrc", dom => dom.src);
+    return this._data.imageSrc;
   }
-
   get description() {
-    return this._getAndUpdateData("description", dom => dom.textContent);
+    return this._data.description;
   }
-
   get latestTime() {
-    return this._getAndUpdateData("latestTime", dom => dom.textContent);
+    return this._data.latestTime;
   }
-
   get isSelected() {
-    const result = this.dom.parentElement.classList.contains("ExSelected");
-
-    this._update("isSelected", result);
-
-    return result;
+    return this._data.isSelected;
   }
-
   get isActive() {
-    return this._getAndUpdateData("isActive", dom => (dom ? true : false));
+    return this._data.isActive;
   }
+
+  getId = () => this.dom.dataset.chatid;
+
+  getTitle = () => this._query("title").textContent;
+
+  getImageSrc = () => this._query("imageSrc").src;
+
+  getDescription = () => this._query("description").textContent;
+
+  getLatestTime = () => this._query("latestTime").textContent;
+
+  getIsSelected = () => this.dom.parentElement.classList.contains("ExSelected");
+
+  getIsActive = () => !!this._query("isActive");
 
   click = () => this.dom.click();
 
+  scrollIntoView = () => this.dom.scrollIntoView({ behavior: "smooth" });
+
+  /**
+   * Custom refresh
+   */
   refresh() {
     this.dom = document.querySelector("[data-chatid=" + this.getId() + "]");
     this._createData();
 
     return this;
-  };
+  }
 
   _createData() {
-    this.id;
-    this.title;
-    this.imageSrc;
-    this.description;
-    this.latestTime;
-    this.isSelected;
-    this.isActive;
+    this._update("id", this.getId());
+    this._update("title", this.getTitle());
+    this._update("imageSrc", this.getImageSrc());
+    this._update("description", this.getDescription());
+    this._update("latestTime", this.getLatestTime());
+    this._update("isSelected", this.getIsSelected());
+    this._update("isActive", this.getIsActive());
   }
 }
 

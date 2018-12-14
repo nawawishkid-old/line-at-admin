@@ -47,33 +47,18 @@ class ChatBaseClass {
   }
 
   toString() {
-    return this.constructor.name;
-    // return JSON.stringify(this._data);
+    return `[object] [${this.constructor.name}]`;
   }
 
   toJSON = () => this._data;
 
+  /**
+   * A method for .refresh() to call to update all the object._data
+   */
   _createData() {}
 
   _assignDom() {
     this.dom = document.querySelector(this._cssSelector);
-  }
-
-  _getAndUpdateData(key, callback, query = null) {
-    let doms = this._query(query ? query : key, true);
-    let data;
-
-    if (doms.length === 0) {
-      doms = null;
-    } else if (doms.length === 1) {
-      doms = doms[0];
-    }
-
-    data = callback(doms);
-
-    this._update(key, data);
-
-    return data;
   }
 
   _query(key, all = false) {

@@ -2,30 +2,37 @@ class ChatAdmin {
   _currentCustomerData = null;
 
   constructor({ list, room }) {
-    console.log("list: ", list);
-    console.log("room: ", room);
     this._addChatDependency("list", list, "ChatList");
     this._addChatDependency("room", room, "ChatRoom");
   }
 
-  get item() {
-    return this.list.refresh().selectedItem;
-  }
+  // get item() {
+  //   return this.list.refresh().selectedItem;
+  // }
 
-  get chatData() {
-    const { item } = this;
+  // get chatData() {
+  //   const { item } = this;
 
-    if (!item) {
-      console.warn("Please select any chat item.");
+  //   if (!item) {
+  //     console.warn("Please select any chat item.");
 
-      return null;
-    }
+  //     return null;
+  //   }
 
-    return item._data;
-  }
+  //   return item._data;
+  // }
 
-  get isFriend() {
-    return this.room.isFriend;
+  get data() {
+    return {
+      cover: this.list.selectedItem._data,
+      room: this.room.messageList._data
+      // chat: {
+      //   id: chatData.id,
+      //   numMessages: roomData.messages.length,
+      //   numConvoTurns: roomData.conversationTurns,
+      //   numParticipatedAdmins: roomData.participatedAdmins.length
+      // }
+    };
   }
 
   sendMessage = message => this.room.sendMessage(message); // [PROPOSAL]

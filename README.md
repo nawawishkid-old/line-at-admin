@@ -9,4 +9,4 @@
 
 # ISSUES
 
-- [ ] `chatList.refresh()` causes error: `Unknown data property: selectedItem` after cancel searching results on Line@ GUI because no chatItem selected
+- [ ] `chatList.refresh()` causes error: `Unknown data property: selectedItem` after cancel searching results on Line@ GUI (clicking x button on search bar of the chat list) because no chatItem selected. But I've tried select a chatItem, the error still exists. I have to reassign the whole ChatAdmin object so that the error disappear.
